@@ -54,15 +54,26 @@ module.exports = {
   // Delete a user by ID
   async deleteUser(req, res) {
     try {
-      const user = await User.findByIdAndDelete(req.params.userId);
+      const userId = req.params.userId;
+      console.log(`Attempting to delete user with ID: ${userId}`);
+  
+      // Find and delete the user
+      const user = await User.findByIdAndDelete(userId);
       if (!user) {
+        console.log(`User not found with ID: ${userId}`);
         return res.status(404).json({ message: 'User not found' });
       }
+  
       // Bonus: Remove user's associated thoughts
-      await Thought.deleteMany({ _id: { $in: user.thoughts } });
-      res.json({ message: 'User and associated thoughts deleted' });
+      if (user.thoughts && user.thoughts.length > 0) {
+        console.log(`Deleting associated thoughts for user: ${user.username}`);
+        await Thought.deleteMany({ _id: { $in: user.thoughts } });
+        console.log(`Thoughts deleted for user: ${user.username}`);
+      }
+      res.status(200).json({ message: 'User and associated thoughts deleted' });
     } catch (err) {
-      res.status(500).json(err);
+      console.error('Error deleting user:', err);
+      res.status(500).json({ message: 'Internal server error', error: err.message });
     }
   },
 
